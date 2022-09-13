@@ -105,4 +105,19 @@ RSpec.describe Game, type: :model do
       expect(game_w_questions.status).to be(:in_progress)
     end
   end
+
+  context 'current_game_question' do
+    it 'return GameQuestion class' do
+      expect(game_w_questions.current_game_question).to be_kind_of(GameQuestion)
+    end
+
+    it 'current question is first question' do
+      first_question = game_w_questions.game_questions.first
+      expect(game_w_questions.current_game_question).to eq(first_question)
+    end
+  end
+
+  it 'previous_level' do
+    expect(game_w_questions.previous_level).to eq(-1)
+  end
 end
