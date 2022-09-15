@@ -122,4 +122,91 @@ RSpec.describe Game, type: :model do
       expect(game_w_questions.previous_level).to eq(-1)
     end
   end
+
+  describe '.answer_current_question!' do
+    let(:q) { game_w_questions.current_game_question }
+    let(:game) { game_w_questions }
+
+    context 'when answer is correct' do
+      before(:each) do
+        game.answer_current_question!(q.correct_answer_key)
+      end
+
+      it 'returns true' do
+        expect(game.answer_current_question!(q.correct_answer_key)).to be_truthy
+      end
+
+      it 'returns :in_progress status' do
+        expect(game.status).to be(:in_progress)
+      end
+
+      it 'game switch to next level' do
+        expect(game.current_level).to eq(1)
+      end
+
+      context 'and question is last' do
+        before(:each) do
+          game.current_level = Question::QUESTION_LEVELS.last
+          game.answer_current_question!(q.correct_answer_key)
+        end
+
+        it 'game finished' do
+          expect(game.finished?).to be_truthy
+        end
+
+        it 'returns :won status' do
+          expect(game.status).to be(:won)
+        end
+
+        it 'game has max prize' do
+          expect(game.prize).to eq(Game::PRIZES.last)
+        end
+
+        it 'prize add to user balance' do
+          expect(user.balance).to eq(game.prize)
+        end
+      end
+    end
+
+    context 'when answer is not correct' do
+      before(:each) do
+        game.answer_current_question!('c')
+      end
+
+      it 'game finished' do
+        expect(game.finished?).to be_truthy
+      end
+
+      it 'returns :fail status' do
+        expect(game.status).to be(:fail)
+      end
+
+      it 'is_failed returns true' do
+        expect(game.is_failed).to be_truthy
+      end
+
+      it 'add finished_at time' do
+        expect(game.finished_at).to be_truthy
+      end
+
+      it 'user balance not increase' do
+        expect(user.balance).to eq(0)
+      end
+    end
+
+    context 'when user try answer after timeout' do
+      before(:each) do
+        game.finished_at = Time.now
+        game.created_at -= Game::TIME_LIMIT + 10
+      end
+
+      it 'returns false' do
+        expect(game.answer_current_question!(q.correct_answer_key)).to be_falsey
+      end
+
+      it 'game finished' do
+        expect(game.finished?).to be_truthy
+      end
+    end
+  end
 end
