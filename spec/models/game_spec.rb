@@ -133,7 +133,7 @@ RSpec.describe Game, type: :model do
       end
 
       it 'returns true' do
-        expect(game.answer_current_question!(q.correct_answer_key)).to be_truthy
+        expect(game.answer_current_question!(q.correct_answer_key)).to be true
       end
 
       it 'returns :in_progress status' do
@@ -151,7 +151,7 @@ RSpec.describe Game, type: :model do
         end
 
         it 'game finished' do
-          expect(game.finished?).to be_truthy
+          expect(game.finished?).to be true
         end
 
         it 'returns :won status' do
@@ -174,7 +174,7 @@ RSpec.describe Game, type: :model do
       end
 
       it 'game finished' do
-        expect(game.finished?).to be_truthy
+        expect(game.finished?).to be true
       end
 
       it 'returns :fail status' do
@@ -182,7 +182,7 @@ RSpec.describe Game, type: :model do
       end
 
       it 'is_failed returns true' do
-        expect(game.is_failed).to be_truthy
+        expect(game.is_failed).to be true
       end
 
       it 'add finished_at time' do
@@ -196,8 +196,12 @@ RSpec.describe Game, type: :model do
 
     context 'when user try answer after timeout' do
       before(:each) do
-        game.finished_at = Time.now
         game.created_at -= Game::TIME_LIMIT + 10
+        game.time_out!
+      end
+
+      it 'returns :timeout status' do
+        expect(game.status).to be(:timeout) 
       end
 
       it 'returns false' do
