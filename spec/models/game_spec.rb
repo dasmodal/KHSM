@@ -106,18 +106,20 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  context 'current_game_question' do
-    it 'return GameQuestion class' do
+  describe '.current_game_question' do
+    it 'returns GameQuestion class' do
       expect(game_w_questions.current_game_question).to be_kind_of(GameQuestion)
     end
 
-    it 'current question is first question' do
+    it 'is first question when game starts' do
       first_question = game_w_questions.game_questions.first
       expect(game_w_questions.current_game_question).to eq(first_question)
     end
   end
 
-  it 'previous_level' do
-    expect(game_w_questions.previous_level).to eq(-1)
+  describe '.previous_level' do
+    it 'returns number previous level' do
+      expect(game_w_questions.previous_level).to eq(-1)
+    end
   end
 end
