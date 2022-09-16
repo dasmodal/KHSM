@@ -115,4 +115,47 @@ RSpec.describe GamesController, type: :controller do
       end
     end
   end
+
+  describe '#take_money' do
+    context 'when user take money before game finish' do
+      let(:level) { 5 }
+
+      before(:each) do
+        sign_in(user)
+        game_w_questions.update(current_level: level)
+
+        put :take_money, id: game_w_questions.id
+      end
+
+      it 'redirects to user' do
+        expect(response).to redirect_to(user_path)
+      end
+
+      it 'returns status 302' do
+        expect(response.status).to eq(302)
+      end
+
+      it 'shows alert' do
+        expect(flash[:warning]).to be
+      end
+
+      it 'game finished? returns true' do
+        game = assigns(:game)
+
+        expect(game.finished?).to be true
+      end
+
+      it 'game prize increase' do
+        game = assigns(:game)
+
+        expect(game.prize).to eq(Game::PRIZES[level - 1])
+      end
+
+      it 'user balance increase' do
+        user.reload
+
+        expect(user.balance).to eq(Game::PRIZES[level - 1])
+      end
+    end
+  end
 end
