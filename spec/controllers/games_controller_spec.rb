@@ -189,4 +189,48 @@ RSpec.describe GamesController, type: :controller do
       end
     end
   end
+
+  describe '#answer' do
+    context 'when user answer wrong' do
+      before do
+        sign_in(user)
+        put :answer, id: game_w_questions.id, letter: 'c'
+      end
+
+      it 'returns status 302' do
+        expect(response.status).to eq(302)
+      end
+
+      it 'redirects to user' do
+        expect(response).to redirect_to(user_path(user))
+      end
+
+      it 'shows alert' do
+        expect(flash[:alert]).to be
+      end
+
+      it 'finishes game' do
+        game = assigns(:game)
+
+        expect(game.finished?).to be true
+      end
+
+      it 'failes game' do
+        game = assigns(:game)
+
+        expect(game.is_failed?).to be true
+      end
+
+      it 'returns :fail game status' do
+        game = assigns(:game)
+
+        expect(game.status).to be(:fail)
+      end
+
+      it 'not increase user balance' do
+        user.reload
+        expect(user.balance).to eq(0)
+      end
+    end
+  end
 end
