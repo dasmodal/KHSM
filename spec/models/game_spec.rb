@@ -75,7 +75,7 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  context 'game.status' do
+  describe '#status' do
     before(:each) do
       game_w_questions.finished_at = Time.now
     end
@@ -106,7 +106,7 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  describe '.current_game_question' do
+  describe '#current_game_question' do
     it 'returns GameQuestion class' do
       expect(game_w_questions.current_game_question).to be_kind_of(GameQuestion)
     end
@@ -117,13 +117,13 @@ RSpec.describe Game, type: :model do
     end
   end
 
-  describe '.previous_level' do
+  describe '#previous_level' do
     it 'returns number previous level' do
       expect(game_w_questions.previous_level).to eq(-1)
     end
   end
 
-  describe '.answer_current_question!' do
+  describe '#answer_current_question!' do
     let(:q) { game_w_questions.current_game_question }
     let(:game) { game_w_questions }
 
