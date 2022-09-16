@@ -158,4 +158,35 @@ RSpec.describe GamesController, type: :controller do
       end
     end
   end
+
+  describe '#create' do
+    context 'when user try start second game but not finished first' do
+      before(:each) do
+        sign_in(user)
+        game_w_questions
+
+        post :create
+      end
+
+      it 'first game exist' do
+        expect(game_w_questions).to be
+      end
+
+      it 'not create second game' do
+        expect(user.games[1]).to be_falsey
+      end
+
+      it 'returns status 302' do
+        expect(response.status).to eq(302)
+      end
+
+      it 'redirects to first game' do
+        expect(response).to redirect_to(game_path(game_w_questions))
+      end
+
+      it 'shows alert' do
+        expect(flash[:alert]).to be
+      end
+    end
+  end
 end
