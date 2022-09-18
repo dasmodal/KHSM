@@ -47,7 +47,7 @@ RSpec.describe GamesController, type: :controller do
       context 'when user try watch another user game' do
         let(:another_user) { FactoryBot.create(:user) }
 
-        before(:each) do
+        before do
           sign_in(another_user)
           get :show, id: game_w_questions.id
         end
@@ -90,7 +90,7 @@ RSpec.describe GamesController, type: :controller do
       context 'when user take money before game finish' do
         let(:level) { 5 }
 
-        before(:each) do
+        before do
           sign_in(user)
           game_w_questions.update(current_level: level)
 
@@ -133,7 +133,7 @@ RSpec.describe GamesController, type: :controller do
       context 'when user take money before game finish' do
         let(:level) { 5 }
 
-        before(:each) do
+        before do
           game_w_questions.update(current_level: level)
           put :take_money, id: game_w_questions.id
         end
@@ -183,7 +183,7 @@ RSpec.describe GamesController, type: :controller do
       end
 
       context 'when user try start second game but not finished first' do
-        before(:each) do
+        before do
           sign_in(user)
           game_w_questions
 
@@ -195,7 +195,7 @@ RSpec.describe GamesController, type: :controller do
         end
 
         it 'not create second game' do
-          expect(user.games[1]).to be_falsey
+          expect(user.games[1]).to be nil
         end
 
         it 'returns status 302' do
@@ -244,7 +244,7 @@ RSpec.describe GamesController, type: :controller do
 
         it 'not finishes game' do
           game = assigns(:game)
-          expect(game.finished?).to be_falsey
+          expect(game.finished?).to be false
         end
 
         it 'moves to next level' do
@@ -258,7 +258,7 @@ RSpec.describe GamesController, type: :controller do
         end
 
         it 'not shows flash' do
-          expect(flash.empty?).to be_truthy # удачный ответ не заполняет flash
+          expect(flash.empty?).to be true
         end
       end
 
@@ -330,44 +330,46 @@ RSpec.describe GamesController, type: :controller do
   describe '#help' do
     context 'when authorizated user' do
       context 'when user take audience_help' do
-        before do
-          sign_in(user)
-          put :help, id: game_w_questions.id, help_type: :audience_help
+        context 'before take help' do
+          it 'returns audience help hash empty before user take help' do
+            expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
+          end
+
+          it 'not uses audience help before user take help' do
+            expect(game_w_questions.audience_help_used).to be false
+          end
         end
 
-        # Todo. these tests need exclude from before hook
+        context 'after take help' do
+          before do
+            sign_in(user)
+            put :help, id: game_w_questions.id, help_type: :audience_help
+          end
 
-        # it 'returns audience help hash empty before user take help' do
-        #   expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
-        # end
+          it 'not finishes game' do
+            game = assigns(:game)
+            expect(game.finished?).to be false
+          end
 
-        # it 'not uses audience help before user take help' do
-        #   expect(game_w_questions.audience_help_used).to be false
-        # end
+          it 'uses audience_help' do
+            game = assigns(:game)
+            expect(game.audience_help_used).to be true
+          end
 
-        it 'not finishes game' do
-          game = assigns(:game)
-          expect(game.finished?).to be false
-        end
+          it 'fills audience_help hash' do
+            game = assigns(:game)
+            expect(game.current_game_question.help_hash[:audience_help]).to be
+          end
 
-        it 'uses audience_help' do
-          game = assigns(:game)
-          expect(game.audience_help_used).to be true
-        end
+          it 'returns letters from audience_help hash' do
+            game = assigns(:game)
+            expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
+          end
 
-        it 'fills audience_help hash' do
-          game = assigns(:game)
-          expect(game.current_game_question.help_hash[:audience_help]).to be
-        end
-
-        it 'returns letters from audience_help hash' do
-          game = assigns(:game)
-          expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
-        end
-
-        it 'redirects to game' do
-          game = assigns(:game)
-          expect(response).to redirect_to(game_path(game))
+          it 'redirects to game' do
+            game = assigns(:game)
+            expect(response).to redirect_to(game_path(game))
+          end
         end
       end
     end
