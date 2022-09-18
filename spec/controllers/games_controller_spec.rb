@@ -18,280 +18,375 @@ RSpec.describe GamesController, type: :controller do
   let(:game_w_questions) { FactoryBot.create(:game_with_questions, user: user) }
 
   describe '#show' do
-    context 'when anon try to watch game' do
-      before { get :show, id: game_w_questions.id }
+    context 'when authorizated user' do
+      context 'when user watch self game' do
+        before do
+          sign_in(user)
+          get :show, id: game_w_questions.id
+        end
 
-      it 'returns status 302' do
-        expect(response.status).to eq(302)
+        it 'not finishes game' do
+          game = assigns(:game)
+          expect(game.finished?).to be false
+        end
+
+        it 'equals game user to user' do
+          game = assigns(:game)
+          expect(game.user).to eq(user)
+        end
+
+        it 'returns status 200' do
+          expect(response.status).to eq(200)
+        end
+
+        it 'renders show template' do
+          expect(response).to render_template('show')
+        end
       end
 
-      it 'redirects to sign in' do
-        expect(response).to redirect_to(new_user_session_path)
-      end
+      context 'when user try watch another user game' do
+        let(:another_user) { FactoryBot.create(:user) }
 
-      it 'shows alert' do
-        expect(flash[:alert]).to be
+        before(:each) do
+          sign_in(another_user)
+          get :show, id: game_w_questions.id
+        end
+
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
+
+        it 'redirects to root' do
+          expect(response).to redirect_to(root_path)
+        end
+
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
 
-    context 'when user watch self game' do
-      before do
-        sign_in(user)
-        get :show, id: game_w_questions.id
-      end
+    context 'when anonymous user' do
+      context 'when user try watch game' do
+        before { get :show, id: game_w_questions.id }
 
-      it 'not finishes game' do
-        game = assigns(:game)
-        expect(game.finished?).to be false
-      end
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
 
-      it 'equals game user to user' do
-        game = assigns(:game)
-        expect(game.user).to eq(user)
-      end
+        it 'redirects to sign in' do
+          expect(response).to redirect_to(new_user_session_path)
+        end
 
-      it 'returns status 200' do
-        expect(response.status).to eq(200)
-      end
-
-      it 'renders show template' do
-        expect(response).to render_template('show')
-      end
-    end
-
-    context 'when user try watch another user game' do
-      let(:another_user) { FactoryBot.create(:user) }
-
-      before(:each) do
-        sign_in(another_user)
-        get :show, id: game_w_questions.id
-      end
-
-      it 'returns status 302' do
-        expect(response.status).to eq(302)
-      end
-
-      it 'redirects to root' do
-        expect(response).to redirect_to(root_path)
-      end
-
-      it 'shows alert' do
-        expect(flash[:alert]).to be
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
   end
 
   describe '#take_money' do
-    context 'when user take money before game finish' do
-      let(:level) { 5 }
+    context 'when authorizated user' do
+      context 'when user take money before game finish' do
+        let(:level) { 5 }
 
-      before(:each) do
-        sign_in(user)
-        game_w_questions.update(current_level: level)
+        before(:each) do
+          sign_in(user)
+          game_w_questions.update(current_level: level)
 
-        put :take_money, id: game_w_questions.id
+          put :take_money, id: game_w_questions.id
+        end
+
+        it 'redirects to user' do
+          expect(response).to redirect_to(user_path)
+        end
+
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
+
+        it 'shows alert' do
+          expect(flash[:warning]).to be
+        end
+
+        it 'game finished? returns true' do
+          game = assigns(:game)
+
+          expect(game.finished?).to be true
+        end
+
+        it 'game prize increase' do
+          game = assigns(:game)
+
+          expect(game.prize).to eq(Game::PRIZES[level - 1])
+        end
+
+        it 'user balance increase' do
+          user.reload
+
+          expect(user.balance).to eq(Game::PRIZES[level - 1])
+        end
       end
+    end
 
-      it 'redirects to user' do
-        expect(response).to redirect_to(user_path)
-      end
+    context 'when anonymous user' do
+      context 'when user take money before game finish' do
+        let(:level) { 5 }
 
-      it 'returns status 302' do
-        expect(response.status).to eq(302)
-      end
+        before(:each) do
+          game_w_questions.update(current_level: level)
+          put :take_money, id: game_w_questions.id
+        end
 
-      it 'shows alert' do
-        expect(flash[:warning]).to be
-      end
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
 
-      it 'game finished? returns true' do
-        game = assigns(:game)
+        it 'redirects to sign in' do
+          expect(response).to redirect_to(new_user_session_path)
+        end
 
-        expect(game.finished?).to be true
-      end
-
-      it 'game prize increase' do
-        game = assigns(:game)
-
-        expect(game.prize).to eq(Game::PRIZES[level - 1])
-      end
-
-      it 'user balance increase' do
-        user.reload
-
-        expect(user.balance).to eq(Game::PRIZES[level - 1])
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
   end
 
   describe '#create' do
-    context 'when user start new game' do
-      before do
-        sign_in(user)
-        generate_questions(15)
-        post :create
+    context 'when authorizated user' do
+      context 'when user start new game' do
+        before do
+          sign_in(user)
+          generate_questions(15)
+          post :create
+        end
+
+        it 'not finishes game' do
+          game = assigns(:game)
+          expect(game.finished?).to be false
+        end
+
+        it 'equals game user to user' do
+          game = assigns(:game)
+          expect(game.user).to eq(user)
+        end
+
+        it 'redirects to game' do
+          game = assigns(:game)
+          expect(response).to redirect_to(game_path(game))
+        end
+
+        it 'shows notice' do
+          expect(flash[:notice]).to be
+        end
       end
 
-      it 'not finishes game' do
-        game = assigns(:game)
-        expect(game.finished?).to be false
-      end
+      context 'when user try start second game but not finished first' do
+        before(:each) do
+          sign_in(user)
+          game_w_questions
 
-      it 'equals game user to user' do
-        game = assigns(:game)
-        expect(game.user).to eq(user)
-      end
+          post :create
+        end
 
-      it 'redirects to game' do
-        game = assigns(:game)
-        expect(response).to redirect_to(game_path(game))
-      end
+        it 'first game exist' do
+          expect(game_w_questions).to be
+        end
 
-      it 'shows notice' do
-        expect(flash[:notice]).to be
+        it 'not create second game' do
+          expect(user.games[1]).to be_falsey
+        end
+
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
+
+        it 'redirects to first game' do
+          expect(response).to redirect_to(game_path(game_w_questions))
+        end
+
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
 
-    context 'when user try start second game but not finished first' do
-      before(:each) do
-        sign_in(user)
-        game_w_questions
+    context 'when anonymous user' do
+      context 'when user start new game' do
+        before do
+          generate_questions(15)
+          post :create
+        end
 
-        post :create
-      end
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
 
-      it 'first game exist' do
-        expect(game_w_questions).to be
-      end
+        it 'redirects to sign in' do
+          expect(response).to redirect_to(new_user_session_path)
+        end
 
-      it 'not create second game' do
-        expect(user.games[1]).to be_falsey
-      end
-
-      it 'returns status 302' do
-        expect(response.status).to eq(302)
-      end
-
-      it 'redirects to first game' do
-        expect(response).to redirect_to(game_path(game_w_questions))
-      end
-
-      it 'shows alert' do
-        expect(flash[:alert]).to be
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
   end
 
   describe '#answer' do
-    context 'when user answer correct' do
-      before do
-        sign_in(user)
-        put :answer, id: game_w_questions.id, letter: game_w_questions.current_game_question.correct_answer_key
+    context 'when authorizated user' do
+      context 'when user answer correct' do
+        before do
+          sign_in(user)
+          put :answer, id: game_w_questions.id, letter: game_w_questions.current_game_question.correct_answer_key
+        end
+
+        it 'not finishes game' do
+          game = assigns(:game)
+          expect(game.finished?).to be_falsey
+        end
+
+        it 'moves to next level' do
+          game = assigns(:game)
+          expect(game.current_level).to be > 0
+        end
+
+        it 'redirects to game' do
+          game = assigns(:game)
+          expect(response).to redirect_to(game_path(game))
+        end
+
+        it 'not shows flash' do
+          expect(flash.empty?).to be_truthy # удачный ответ не заполняет flash
+        end
       end
 
-      it 'not finishes game' do
-        game = assigns(:game)
-        expect(game.finished?).to be_falsey
-      end
+      context 'when user answer wrong' do
+        before do
+          sign_in(user)
+          put :answer, id: game_w_questions.id, letter: 'c'
+        end
 
-      it 'moves to next level' do
-        game = assigns(:game)
-        expect(game.current_level).to be > 0
-      end
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
 
-      it 'redirects to game' do
-        game = assigns(:game)
-        expect(response).to redirect_to(game_path(game))
-      end
+        it 'redirects to user' do
+          expect(response).to redirect_to(user_path(user))
+        end
 
-      it 'not shows flash' do
-        expect(flash.empty?).to be_truthy # удачный ответ не заполняет flash
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
+
+        it 'finishes game' do
+          game = assigns(:game)
+
+          expect(game.finished?).to be true
+        end
+
+        it 'failes game' do
+          game = assigns(:game)
+
+          expect(game.is_failed?).to be true
+        end
+
+        it 'returns :fail game status' do
+          game = assigns(:game)
+
+          expect(game.status).to be(:fail)
+        end
+
+        it 'not increase user balance' do
+          user.reload
+          expect(user.balance).to eq(0)
+        end
       end
     end
 
-    context 'when user answer wrong' do
-      before do
-        sign_in(user)
-        put :answer, id: game_w_questions.id, letter: 'c'
-      end
+    context 'when anonymous user' do
+      context 'when user try answer' do
+        before do
+          put :answer, id: game_w_questions.id,
+            letter: game_w_questions.current_game_question.correct_answer_key
+        end
 
-      it 'returns status 302' do
-        expect(response.status).to eq(302)
-      end
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
 
-      it 'redirects to user' do
-        expect(response).to redirect_to(user_path(user))
-      end
+        it 'redirects to sign in' do
+          expect(response).to redirect_to(new_user_session_path)
+        end
 
-      it 'shows alert' do
-        expect(flash[:alert]).to be
-      end
-
-      it 'finishes game' do
-        game = assigns(:game)
-
-        expect(game.finished?).to be true
-      end
-
-      it 'failes game' do
-        game = assigns(:game)
-
-        expect(game.is_failed?).to be true
-      end
-
-      it 'returns :fail game status' do
-        game = assigns(:game)
-
-        expect(game.status).to be(:fail)
-      end
-
-      it 'not increase user balance' do
-        user.reload
-        expect(user.balance).to eq(0)
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
   end
 
   describe '#help' do
-    context 'when user take audience_help' do
-      before do
-        sign_in(user)
-        put :help, id: game_w_questions.id, help_type: :audience_help
+    context 'when authorizated user' do
+      context 'when user take audience_help' do
+        before do
+          sign_in(user)
+          put :help, id: game_w_questions.id, help_type: :audience_help
+        end
+
+        # Todo. these tests need exclude from before hook
+
+        # it 'returns audience help hash empty before user take help' do
+        #   expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
+        # end
+
+        # it 'not uses audience help before user take help' do
+        #   expect(game_w_questions.audience_help_used).to be false
+        # end
+
+        it 'not finishes game' do
+          game = assigns(:game)
+          expect(game.finished?).to be false
+        end
+
+        it 'uses audience_help' do
+          game = assigns(:game)
+          expect(game.audience_help_used).to be true
+        end
+
+        it 'fills audience_help hash' do
+          game = assigns(:game)
+          expect(game.current_game_question.help_hash[:audience_help]).to be
+        end
+
+        it 'returns letters from audience_help hash' do
+          game = assigns(:game)
+          expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
+        end
+
+        it 'redirects to game' do
+          game = assigns(:game)
+          expect(response).to redirect_to(game_path(game))
+        end
       end
+    end
 
-      # Todo. these tests need exclude from before hook
+    context 'when anonymous user' do
+      context 'when user take audience_help' do
+        before { put :help, id: game_w_questions.id, help_type: :audience_help }
 
-      # it 'returns audience help hash empty before user take help' do
-      #   expect(game_w_questions.current_game_question.help_hash[:audience_help]).not_to be
-      # end
+        it 'returns status 302' do
+          expect(response.status).to eq(302)
+        end
 
-      # it 'not uses audience help before user take help' do
-      #   expect(game_w_questions.audience_help_used).to be false
-      # end
+        it 'redirects to sign in' do
+          expect(response).to redirect_to(new_user_session_path)
+        end
 
-      it 'not finishes game' do
-        game = assigns(:game)
-        expect(game.finished?).to be false
-      end
-
-      it 'uses audience_help' do
-        game = assigns(:game)
-        expect(game.audience_help_used).to be true
-      end
-
-      it 'fills audience_help hash' do
-        game = assigns(:game)
-        expect(game.current_game_question.help_hash[:audience_help]).to be
-      end
-
-      it 'returns letters from audience_help hash' do
-        game = assigns(:game)
-        expect(game.current_game_question.help_hash[:audience_help].keys).to contain_exactly('a', 'b', 'c', 'd')
-      end
-
-      it 'redirects to game' do
-        game = assigns(:game)
-        expect(response).to redirect_to(game_path(game))
+        it 'shows alert' do
+          expect(flash[:alert]).to be
+        end
       end
     end
   end
