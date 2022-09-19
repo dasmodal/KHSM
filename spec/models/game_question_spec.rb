@@ -81,4 +81,34 @@ RSpec.describe GameQuestion, type: :model do
       end
     end
   end
+
+  describe '#add_fifty_fifty' do
+    let(:fifty_fifty) { game_question.help_hash[:fifty_fifty] }
+
+    context 'before fifty fifty use' do
+      it 'help not to be' do
+        expect(fifty_fifty).not_to be
+      end
+    end
+
+    context 'after fifty fifty use' do
+      before { game_question.add_fifty_fifty }
+
+      it 'help to be' do
+        expect(fifty_fifty).to be
+      end
+
+      it 'help is Array' do
+        expect(fifty_fifty).to be_kind_of Array
+      end
+
+      it 'help contains 2 variants' do
+        expect(fifty_fifty.size).to eq(2)
+      end
+
+      it 'help contains correct variant' do
+        expect(fifty_fifty).to include(game_question.correct_answer_key)
+      end
+    end
+  end
 end
