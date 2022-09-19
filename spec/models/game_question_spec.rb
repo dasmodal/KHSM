@@ -72,8 +72,8 @@ RSpec.describe GameQuestion, type: :model do
         expect(friend_call).to be
       end
 
-      it 'help is String' do
-        expect(friend_call).to be_kind_of String
+      it 'help has some text' do
+        expect(friend_call).to match(/[А-Яа-я ]+ считает, что это вариант [A-D]/)
       end
 
       it 'help contains variant' do
