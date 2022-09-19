@@ -372,6 +372,56 @@ RSpec.describe GamesController, type: :controller do
           end
         end
       end
+
+      context 'when user take fifty_fifty' do
+        context 'before take help' do
+          it 'returns fifty_fifty hash empty' do
+            expect(game_w_questions.current_game_question.help_hash[:fifty_fifty]).not_to be
+          end
+
+          it 'not uses fifty_fifty' do
+            expect(game_w_questions.fifty_fifty_used).to be false
+          end
+        end
+
+        context 'after take help' do
+          before do
+            sign_in(user)
+            put :help, id: game_w_questions.id, help_type: :fifty_fifty
+          end
+
+          it 'not finishes game' do
+            game = assigns(:game)
+            expect(game.finished?).to be false
+          end
+
+          it 'uses fifty_fifty' do
+            game = assigns(:game)
+            expect(game.fifty_fifty_used).to be true
+          end
+
+          it 'fills fifty_fifty array' do
+            game = assigns(:game)
+            expect(game.current_game_question.help_hash[:fifty_fifty]).to be
+          end
+
+          it 'returns 2 variants from fifty_fifty array' do
+            game = assigns(:game)
+            expect(game.current_game_question.help_hash[:fifty_fifty].size).to eq(2)
+          end
+
+          it 'contains 1 correct variant' do
+            game = assigns(:game)
+            correct_answer_key = game.current_game_question.correct_answer_key
+            expect(game.current_game_question.help_hash[:fifty_fifty]).to include(correct_answer_key)
+          end
+
+          it 'redirects to game' do
+            game = assigns(:game)
+            expect(response).to redirect_to(game_path(game))
+          end
+        end
+      end
     end
 
     context 'when anonymous user' do
