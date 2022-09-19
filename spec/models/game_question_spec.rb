@@ -55,4 +55,30 @@ RSpec.describe GameQuestion, type: :model do
   it 'correct_answer_key' do
     expect(game_question.correct_answer_key).to eq('b')
   end
+
+  describe '#add_friend_call' do
+    let(:friend_call) { game_question.help_hash[:friend_call] }
+
+    context 'before friend call use' do
+      it 'help not to be' do
+        expect(friend_call).not_to be
+      end
+    end
+
+    context 'after friend call use' do
+      before { game_question.add_friend_call }
+
+      it 'help to be' do
+        expect(friend_call).to be
+      end
+
+      it 'help is String' do
+        expect(friend_call).to be_kind_of String
+      end
+
+      it 'help contains variant' do
+        expect(friend_call[-1]).to be_between('A', 'D')
+      end
+    end
+  end
 end
