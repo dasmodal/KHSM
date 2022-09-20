@@ -19,16 +19,16 @@ RSpec.feature 'USER watches not self phofile', type: :feature do
 
     expect(page).not_to have_content 'Сменить имя и пароль'
 
-    expect(page).to have_content '2'
-    expect(page).to have_content 'в процессе'
-    expect(page).to have_content '19 сент., 19:30'
-    expect(page).to have_content '4'
-    expect(page).to have_content '0'
+    expect(page).to have_selector('td.game-id', text: '2')
+    expect(page).to have_selector('td.game-status', text: 'в процессе')
+    expect(page).to have_selector('td.game-date', text: '19 сент., 19:30')
+    expect(page).to have_selector('td.game-level', text: '4')
+    expect(page).to have_selector('td.game-prize', text: '0')
 
-    expect(page).to have_content '1'
-    expect(page).to have_content 'деньги'
-    expect(page).to have_content '19 сент., 19:00'
-    expect(page).to have_content '7'
-    expect(page).to have_content '4 000 ₽'
+    expect(page).to have_selector('td.game-id', text: '1')
+    expect(page).to have_selector('td.game-status', text: 'деньги')
+    expect(page).to have_selector('td.game-date', text: '19 сент., 19:00')
+    expect(page).to have_selector('td.game-level', text: '7')
+    expect(page).to have_selector('td.game-prize', text: '4 000 ₽')
   end
 end

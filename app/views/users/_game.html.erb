@@ -1,10 +1,10 @@
 <%# Шаблон, который выводит информацию о конкретной игре для профиля пользователя %>
 <tr class="text-center">
-  <td><%= game.id %></td>
-  <td><%= game_label(game) %></td>
-  <td><%= l game.created_at, format: :short %></td>
-  <td><%= game.current_level %></td>
-  <td><%= number_to_currency game.prize %></td>
+  <td class="game-id"><%= game.id %></td>
+  <td class="game-status"><%= game_label(game) %></td>
+  <td class="game-date"><%= l game.created_at, format: :short %></td>
+  <td class="game-level"><%= game.current_level %></td>
+  <td class="game-prize"><%= number_to_currency game.prize %></td>
   <td>
     <%= content_tag :span, '50/50',
       class: "label label-primary #{'game-help-used' if game.fifty_fifty_used?}"
